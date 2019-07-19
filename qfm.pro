@@ -11,7 +11,15 @@ TARGET = qfm
 TEMPLATE = app
 
 INCLUDEPATH +=$$PWD main
-include(qfm/qfm.pri)
+
+HEADERS += \
+    $$PWD/fileupdater.h \
+    $$PWD/qfmwidget.h \
+
+SOURCES += \
+    $$PWD/fileupdater.cpp \
+    $$PWD/main.cpp \
+    $$PWD/qfmwidget.cpp
 
 RESOURCES += \
     res.qrc
