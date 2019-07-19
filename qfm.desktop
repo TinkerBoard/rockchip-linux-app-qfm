@@ -2,5 +2,5 @@
 Name=qfm
 Name[zh_CN]=文件管理器
 Exec=/usr/bin/qfm
-Icon=/usr/share/icon/icon_qfm.png
+Icon=/usr/share/icon/icon_folder.png
 Type=Application
