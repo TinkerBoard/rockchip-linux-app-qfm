@@ -48,11 +48,14 @@
 **
 ****************************************************************************/
 #include "fileupdater.h"
-#include <QDir>
-#include <QDirIterator>
-#include <QStandardPaths>
 #include <QApplication>
 #include <QDebug>
+#include <QDir>
+#include <QDirIterator>
+#include <QMimeDatabase>
+#include <QStandardPaths>
+
+
 
 FileUpdater::FileUpdater() : QThread()
 {
@@ -93,10 +96,19 @@ QStringList FileUpdater::getFiles(const QString &path)
 
     for(int i=0;i<files.count();i++){
         filelist << files[i].fileName();
+        QString type = getMimeType(files[i].fileName());
+        qDebug() << files[i].fileName() << "mime type: " << type;
     }
 
-    qDebug() << filelist;
     return filelist;
+}
+
+QString FileUpdater::getMimeType(const QString &path)
+{
+    QMimeDatabase db;
+    QMimeType type = db.mimeTypeForFile(path);
+
+    return type.name();
 }
 
 void FileUpdater::run()

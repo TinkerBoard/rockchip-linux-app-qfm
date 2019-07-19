@@ -200,6 +200,14 @@ void QfmWidget::on_itemEntered(QListWidgetItem *item)
 
 void QfmWidget::on_itemClicked(QListWidgetItem *item)
 {
+    if(m_curDir.compare("top")){
+        QString path = m_curDir + "/" + item->text();
+        QFileInfo file = QFileInfo(path);
+        if(! file.isDir()){
+            m_mimeUtils.openInApp(path, "");
+            return;
+        }
+    }
     getItems(item);
 }
 

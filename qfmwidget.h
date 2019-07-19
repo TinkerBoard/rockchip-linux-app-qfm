@@ -56,6 +56,7 @@
 #include <QPushButton>
 #include <QThread>
 #include "fileupdater.h"
+#include "mimeutils.h"
 
 class QfmWidget : public QWidget
 {
@@ -73,6 +74,7 @@ private:
     QStringList m_topPathList;
     QString m_curDir;
     FileUpdater m_fileUpdater;
+    MimeUtils m_mimeUtils;
 
     void initLayout();
     void getlist(QListWidget *listWid, QStringList *list);

@@ -66,6 +66,7 @@ public:
     FileUpdater();
     ~FileUpdater(){}
     QStringList getFiles(const QString &path);
+    QString getMimeType(const QString &path);
     void waitForThreadFinished();
 
 private:
