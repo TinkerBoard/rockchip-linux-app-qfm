@@ -1,43 +1,92 @@
 #include "mimeutils.h"
-#include "fileutils.h"
 #include <QApplication>
 #include <QDir>
+#include <QDirIterator>
 #include <QProcess>
 #include <QDebug>
 #include <QMessageBox>
 #include <QMimeDatabase>
 #include <QMimeType>
-#include "common.h"
 
-
+#define MIME_APPS "/.local/share/applications/mimeapps.list"
 /**
  * @brief Creates mime utils
  * @param parent
  */
 MimeUtils::MimeUtils(QObject *parent) : QObject(parent) {
   defaultsFileName = MIME_APPS;
-  defaults = new Properties();
-  loadDefaults();
-}
-//---------------------------------------------------------------------------
-
-/**
- * @brief Loads list of default applications for mimes
- * @return properties with default applications
- */
-void MimeUtils::loadDefaults() {
-  defaults->load(QDir::homePath() + defaultsFileName, "Default Applications");
+  getProperties();
+  load(QDir::homePath() + defaultsFileName, "Default Applications");
   defaultsChanged = false;
 }
+
+MimeUtils::~MimeUtils() {
+}
 //---------------------------------------------------------------------------
 
 /**
- * @brief Destructor
+ * @brief Loads property file
+ * @param fileName
+ * @param group
+ * @return true if load was successful
  */
-MimeUtils::~MimeUtils() {
-  delete defaults;
+bool MimeUtils::load(const QString &fileName, const QString &group) {
+
+  // NOTE: This class is used for reading of property files instead of QSettings
+  // class, which considers separator ';' as comment
+
+  // Try open file
+  QFile file(fileName);
+  if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+    return false;
+  }
+
+  // Clear old data
+  data.clear();
+
+  // Indicator whether group was found or not, if name of group was not
+  // specified, groupFound is always true
+  bool groupFound = group.isEmpty();
+
+  // Read propeties
+  QTextStream in(&file);
+  while (!in.atEnd()) {
+
+    // Read new line
+    QString line = in.readLine();
+
+    // Skip empty line or line with invalid format
+    if (line.trimmed().isEmpty()) {
+      continue;
+    }
+
+    // Read group
+    // NOTE: symbols '[' and ']' can be found not only in group names, but
+    // only group can start with '['
+    if (!group.isEmpty() && line.trimmed().startsWith("[")) {
+      QString tmp = line.trimmed().replace("[", "").replace("]", "");
+      groupFound = group.trimmed().compare(tmp) == 0;
+    }
+
+    // If we are in correct group and line contains assignment then read data
+    if (groupFound && line.contains("=")) {
+      QStringList tmp = line.split("=");
+      data.insert(tmp.at(0), tmp.at(1));
+    }
+  }
+  file.close();
+  return true;
 }
-//---------------------------------------------------------------------------
+
+QVariant MimeUtils::value(const QString &key, const QVariant &defaultValue) {
+  return data.value(key, defaultValue);
+}
+
+void MimeUtils::getProperties(const QString &fileName, const QString &group) {
+  if (!fileName.isEmpty()) {
+    load(fileName, group);
+  }
+}
 
 /**
  * @brief Returns mime type of given file
@@ -51,18 +100,63 @@ QString MimeUtils::getMimeType(const QString &path) {
     //qDebug() << "mime type" << type.name() << path;
     return type.name();
 }
-//---------------------------------------------------------------------------
 
-/**
- * @brief Returns list of mime types
- * @return list of available mimetypes
- */
-QStringList MimeUtils::getMimeTypes() const {
-    QStringList result = Common::getMimeTypes(qApp->applicationFilePath());
-    //qDebug() << "getMimeTypes"  << result;
-    return result;
+
+void MimeUtils::getDesktopFile(const QString &fileName) {
+
+  // Store file name
+  this->fileName = fileName;
+
+  // File validity
+  if (!QFile::exists(fileName)) {
+    return;
+  }
+
+  // Loads .desktop file (read from 'Desktop Entry' group)
+  getProperties(fileName, "Desktop Entry");
+  name = value("Name", "").toString();
+  genericName = value("GenericName", "").toString();
+  exec = value("Exec", "").toString();
+  icon = value("Icon", "").toString();
+  type = value("Type", "Application").toString();
+  no_display = value("NoDisplay", false).toBool();
+  terminal = value("Terminal", false).toBool();
+  categories = value("Categories").toString().remove(" ").split(";");
+  mimeType = value("MimeType").toString().remove(" ").split(";");
+
+  // Fix categories
+  if (categories.first().compare("") == 0) {
+    categories.removeFirst();
+  }
 }
 //---------------------------------------------------------------------------
+
+QStringList MimeUtils::applicationLocations(QString appPath)
+{
+    QStringList result;
+    result << QString("%1/.local/share/applications").arg(QDir::homePath());
+    result << QString("%1/../share/applications").arg(appPath);
+    result << "/usr/share/applications" << "/usr/local/share/applications";
+    return result;
+}
+
+QString MimeUtils::findApplication(QString appPath, QString desktopFile)
+{
+    QString result;
+    if (desktopFile.isEmpty()) { return result; }
+    QStringList apps = applicationLocations(appPath);
+    for (int i=0;i<apps.size();++i) {
+        QDirIterator it(apps.at(i), QStringList("*.desktop"), QDir::Files|QDir::NoDotAndDotDot);
+        while (it.hasNext()) {
+            QString found = it.next();
+            if (found.split("/").takeLast()==desktopFile) {
+                //qDebug() << "found app" << found;
+                return found;
+            }
+        }
+    }
+    return result;
+}
 
 /**
  * @brief Opens file in a default application
@@ -72,33 +166,24 @@ QStringList MimeUtils::getMimeTypes() const {
 void MimeUtils::openInApp(const QFileInfo &file, QString termCmd) {
     qDebug() << "openInApp without app";
   QString mime = getMimeType(file.absoluteFilePath());
-  QString app = defaults->value(mime).toString().split(";").first();
+  QString app = value(mime).toString().split(";").first();
   if (app.isEmpty() && mime.startsWith("text/") && mime != "text/plain") {
       // fallback for text
-      app = defaults->value("text/plain").toString().split(";").first();
+      app = value("text/plain").toString().split(";").first();
   }
-  QString desktop = Common::findApplication(qApp->applicationFilePath(), app);
+  QString desktop = findApplication(qApp->applicationFilePath(), app);
   qDebug() << "openInApp" << file.absoluteFilePath() << termCmd << mime << app << desktop;
   if (!desktop.isEmpty()) {
-    DesktopFile df = DesktopFile(desktop);
-    if (!df.isTerminal()) { termCmd.clear(); }
+    getDesktopFile(desktop);
+    if (!terminal) { termCmd.clear(); }
     else {
         if (termCmd.isEmpty()) { termCmd = "xterm"; }
     }
-    openInApp(df.getExec(), file, termCmd);
+    openInApp(exec, file, termCmd);
   } else {
-#ifdef Q_OS_DARWIN
-      CFURLRef ref = CFURLCreateWithFileSystemPath(Q_NULLPTR,
-                                                   file.absoluteFilePath().toCFString(),
-                                                   kCFURLPOSIXPathStyle,
-                                                   file.isDir());
-      LSOpenCFURLRef(ref, Q_NULLPTR);
-#else
-
      QString title = tr("No default application");
      QString msg = tr("No default application for mime: %1!").arg(mime);
      QMessageBox::warning(Q_NULLPTR, title, msg);
-#endif
   }
 }
 //---------------------------------------------------------------------------
@@ -158,154 +243,3 @@ void MimeUtils::openInApp(QString exe, const QFileInfo &file,
   QProcess::startDetached(cmd);
 }
 
-void MimeUtils::openFilesInApp(QString exe, const QStringList &files, QString termCmd)
-{
-    // Separate application name from its arguments
-    QStringList split = exe.split(" ");
-    QString name = split.takeAt(0);
-    QString args = split.join(" ");
-
-    if (args.toLower().contains("%f")) {
-        args.replace("%f", "", Qt::CaseInsensitive);
-    } else if (args.toLower().contains("%u")) {
-        args.replace("%u", "", Qt::CaseInsensitive);
-    }
-    for (int i=0;i<files.size();++i) {
-        args.append("\"" + files.at(i) + "\" ");
-    }
-
-    // Start application
-    QString cmd = name;
-    if (termCmd.isEmpty()) {
-      cmd.append(" ");
-      cmd.append(args);
-    } else {
-      cmd = QString("%1 -e \"%2 %3\"").arg(termCmd).arg(name).arg(args);
-    }
-    qDebug() << "running:" << cmd;
-    QProcess::startDetached(cmd);
-}
-//---------------------------------------------------------------------------
-
-/**
- * @brief Sets defaults file name (name of file where defaults are stored)
- * @param fileName
- */
-void MimeUtils::setDefaultsFileName(const QString &fileName) {
-  this->defaultsFileName = fileName;
-  loadDefaults();
-}
-//---------------------------------------------------------------------------
-
-/**
- * @brief Returns defaults file name
- * @return name of file where defaults are stored
- */
-QString MimeUtils::getDefaultsFileName() const {
-    return defaultsFileName;
-}
-
-QString MimeUtils::getAppForMimeType(const QString &mime) const
-{
-    return defaults->value(mime).toString().split(";").first();
-}
-//---------------------------------------------------------------------------
-
-/**
- * @brief Generates default application-mime associations
- */
-void MimeUtils::generateDefaults() {
-
-  // Load list of applications
-  QList<DesktopFile> apps = FileUtils::getApplications();
-  QStringList names;
-
-  // Find defaults; for each application...
-  // ------------------------------------------------------------------------
-  foreach (DesktopFile a, apps) {
-
-  // ignore NoDisplay=true
-  if (a.noDisplay()) { continue; }
-
-    // For each mime of current application...
-    QStringList mimes = a.getMimeType();
-    foreach (QString mime, mimes) {
-
-      // Current app name
-      QString name = a.getPureFileName() + ".desktop";
-      names.append(name);
-
-      // If current mime is not mentioned in the list of defaults, add it
-      // together with current application and continue
-      if (!defaults->contains(mime)) {
-        defaults->set(mime, name);
-        defaultsChanged = true;
-        continue;
-      }
-
-      // Retrieve list of default applications for current mime, if it does
-      // not contain current application, add this application to list
-      QStringList appNames = defaults->value(mime).toString().split(";");
-      if (!appNames.contains(name)) {
-        appNames.append(name);
-        defaults->set(mime, appNames.join(";"));
-        defaultsChanged = true;
-      }
-    }
-  }
-
-  // Delete dead defaults (non existing apps)
-  // ------------------------------------------------------------------------
-  foreach (QString key, defaults->getKeys()) {
-    QStringList tmpNames1 = defaults->value(key).toString().split(";");
-    QStringList tmpNames2 = QStringList();
-    foreach (QString name, tmpNames1) {
-      if (names.contains(name)) {
-        tmpNames2.append(name);
-      }
-    }
-    if (tmpNames1.size() != tmpNames2.size()) {
-      defaults->set(key, tmpNames2.join(";"));
-      defaultsChanged = true;
-    }
-  }
-
-  // Save defaults if changed
-  saveDefaults();
-}
-//---------------------------------------------------------------------------
-
-/**
- * @brief Sets default mime association
- * @param mime mime name
- * @param apps list of applications (desktop file names)
- */
-void MimeUtils::setDefault(const QString &mime, const QStringList &apps) {
-  QString value = apps.join(";");
-  if (value.compare(defaults->value(mime, "").toString()) != 0) {
-    defaults->set(mime, value);
-    defaultsChanged = true;
-  }
-}
-//---------------------------------------------------------------------------
-
-/**
- * @brief Returns default applications for given mime
- * @param mime
- * @return list of default applications name
- */
-QStringList MimeUtils::getDefault(const QString &mime) const {
-  return defaults->value(mime).toString().split(";");
-}
-//---------------------------------------------------------------------------
-
-/**
- * @brief Saves defaults
- */
-void MimeUtils::saveDefaults() {
-  if (defaultsChanged) {
-    defaults->save(QDir::homePath() + defaultsFileName, "Default Applications");
-    defaultsChanged = false;
-  }
-}
-//---------------------------------------------------------------------------

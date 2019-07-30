@@ -1,10 +1,8 @@
 #ifndef MIMEUTILS_H
 #define MIMEUTILS_H
 
-#include "properties.h"
-
 #include <QFileInfo>
-
+#include <QVariant>
 /**
  * @class MimeUtils
  * @brief Helps with mime type management
@@ -16,24 +14,30 @@ class MimeUtils : public QObject {
 public:
   explicit MimeUtils(QObject* parent = Q_NULLPTR);
   virtual ~MimeUtils();
-  void openInApp(QString exe, const QFileInfo &file, QString termCmd = QString());
-  void openFilesInApp(QString exe, const QStringList &files, QString termCmd);
-  void openInApp(const QFileInfo &file, QString termCmd = QString());
-  void setDefaultsFileName(const QString &fileName);
-  void setDefault(const QString &mime, const QStringList &apps);
-  QStringList getDefault(const QString &mime) const;
-  QStringList getMimeTypes() const;
+  bool load(const QString &fileName, const QString &group = "");
+  QVariant value(const QString &key, const QVariant &defaultValue = QVariant());
+  void getProperties(const QString &fileName = "", const QString &group = "");
   QString getMimeType(const QString &path);
-  QString getDefaultsFileName() const;
-  QString getAppForMimeType(const QString &mime) const;
-public slots:
-  void generateDefaults();
-  void saveDefaults();
-  void loadDefaults();
+  void getDesktopFile(const QString &fileName);
+  QStringList applicationLocations(QString appPath);
+  QString findApplication(QString appPath, QString desktopFile);
+  void openInApp(QString exe, const QFileInfo &file, QString termCmd = QString());
+  void openInApp(const QFileInfo &file, QString termCmd = QString());
+
 private:
   bool defaultsChanged;
   QString defaultsFileName;
-  Properties* defaults;
+  QString fileName;
+  QString name;
+  QString genericName;
+  QString exec;
+  QString icon;
+  QString type;
+  bool no_display;
+  bool terminal;
+  QStringList categories;
+  QStringList mimeType;
+  QMap<QString, QVariant> data;
 };
 
 #endif // MIMEUTILS_H

@@ -13,22 +13,14 @@ TEMPLATE = app
 INCLUDEPATH +=$$PWD main
 
 HEADERS += \
-    $$PWD/common.h \
-    $$PWD/desktopfile.h \
     $$PWD/fileupdater.h \
-    $$PWD/fileutils.h \
     $$PWD/mimeutils.h \
-    $$PWD/properties.h \
     $$PWD/qfmwidget.h \
 
 SOURCES += \
-    $$PWD/common.cpp \
-    $$PWD/desktopfile.cpp \
     $$PWD/fileupdater.cpp \
-    $$PWD/fileutils.cpp \
     $$PWD/main.cpp \
     $$PWD/mimeutils.cpp \
-    $$PWD/properties.cpp \
     $$PWD/qfmwidget.cpp
 
 RESOURCES += \
