@@ -164,8 +164,9 @@ QString MimeUtils::findApplication(QString appPath, QString desktopFile)
  * @param processOwner
  */
 void MimeUtils::openInApp(const QFileInfo &file, QString termCmd) {
-    qDebug() << "openInApp without app";
+  qDebug() << "openInApp without app";
   QString mime = getMimeType(file.absoluteFilePath());
+  load(defaultsFileName, "Default Applications");
   QString app = value(mime).toString().split(";").first();
   if (app.isEmpty() && mime.startsWith("text/") && mime != "text/plain") {
       // fallback for text
