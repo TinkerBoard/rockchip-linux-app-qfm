@@ -103,6 +103,8 @@ void QfmWindow::initLayout()
     setCentralWidget(m_listWid);
     addToolBar(m_toolbar);
     setStyleSheet("background-color:rgb(204,228,247)");
+    setWindowState(Qt::WindowMaximized);
+    setWindowFlag(Qt::FramelessWindowHint);
 }
 
 void QfmWindow::getlist(QListWidget *listWid, QStringList *list)
