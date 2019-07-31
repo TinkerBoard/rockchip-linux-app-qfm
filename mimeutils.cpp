@@ -8,7 +8,7 @@
 #include <QMimeDatabase>
 #include <QMimeType>
 
-#define MIME_APPS "/.local/share/applications/mimeapps.list"
+#define MIME_APPS "/usr/share/applications/mimeapps.list"
 /**
  * @brief Creates mime utils
  * @param parent
@@ -16,7 +16,7 @@
 MimeUtils::MimeUtils(QObject *parent) : QObject(parent) {
   defaultsFileName = MIME_APPS;
   getProperties();
-  load(QDir::homePath() + defaultsFileName, "Default Applications");
+  load(defaultsFileName, "Default Applications");
   defaultsChanged = false;
 }
 
