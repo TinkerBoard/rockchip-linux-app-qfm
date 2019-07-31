@@ -47,39 +47,43 @@
 ** $QT_END_LICENSE$
 **
 ****************************************************************************/
-#ifndef QFMWIDGET_H
-#define QFMWIDGET_H
+#ifndef QFMWINDOW_H
+#define QFMWINDOW_H
 
 #include <QFileInfoList>
 #include <QLabel>
 #include <QListWidget>
+#include <QMainWindow>
 #include <QPushButton>
 #include <QThread>
 #include "fileupdater.h"
 #include "mimeutils.h"
 
-class QfmWidget : public QWidget
+class QfmWindow : public QMainWindow
 {
     Q_OBJECT
 public:
-    explicit QfmWidget(QWidget *parent = 0);
-    ~QfmWidget(){}
+    explicit QfmWindow(QWidget *parent = 0);
+    ~QfmWindow(){}
 
 private:
     bool mediaHasUpdate;
     QPushButton *m_btnreturn;
     QLabel *m_titleLabel;
+    QPushButton *m_btnopen;
     QListWidget *m_listWid;
     QStringList m_topDirList;
     QStringList m_topPathList;
     QString m_curDir;
     FileUpdater m_fileUpdater;
     MimeUtils m_mimeUtils;
-
+    QToolBar *m_toolbar;
+    bool m_multichecking;
     void initLayout();
     void getlist(QListWidget *listWid, QStringList *list);
     void getItems(QListWidgetItem *item);
     bool isTop(QString path);
+    int getCheckedItemCnt(void);
 private slots:
     void on_returnClicked();
     void on_itemEntered(QListWidgetItem *item);
@@ -87,4 +91,4 @@ private slots:
 };
 
 
-#endif // QFMWIDGET_H
+#endif // QFMWINDOW_H

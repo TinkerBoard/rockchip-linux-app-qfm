@@ -48,35 +48,32 @@
 **
 ****************************************************************************/
 
-#include "qfmwidget.h"
+#include "qfmwindow.h"
+#include <QApplication>
 #include <QColor>
+#include <QCheckBox>
+#include <QDebug>
 #include <QDir>
 #include <QDirIterator>
 #include <QStandardPaths>
-#include <QApplication>
-#include <QVBoxLayout>
-#include <QHBoxLayout>
+#include <QToolBar>
 
 
 #define FILEMANAGER "File Manager"
-QfmWidget::QfmWidget(QWidget *parent) : QWidget(parent)
+QfmWindow::QfmWindow(QWidget *parent) : QMainWindow(parent)
 {
+    m_curDir= "top";
+    m_multichecking = false;
+    m_topDirList<<"Root"<<"Home"<<"Oem"<<"User data"<<"sdcard";
+    m_topPathList<<"/"<<QStandardPaths::standardLocations(QStandardPaths::HomeLocation)<<"/oem"<<"/userdata"<<"/sdcard";
     initLayout();
     connect(m_btnreturn, SIGNAL(clicked(bool)), this, SLOT(on_returnClicked()));
     connect(m_listWid, SIGNAL(itemClicked(QListWidgetItem *)), this, SLOT(on_itemClicked(QListWidgetItem *)));
     connect(m_listWid, SIGNAL(itemEntered(QListWidgetItem *)), this, SLOT(on_itemEntered(QListWidgetItem *)));
 }
 
-void QfmWidget::initLayout()
+void QfmWindow::initLayout()
 {
-    QVBoxLayout *mainLayout = new QVBoxLayout;
-    QHBoxLayout *hlayout = new QHBoxLayout;
-    QColor c(Qt::black);
-
-    m_curDir= "top";
-    m_topDirList<<"Root"<<"Home"<<"Oem"<<"User data"<<"sdcard";
-    m_topPathList<<"/"<<QStandardPaths::standardLocations(QStandardPaths::HomeLocation)<<"/oem"<<"/userdata"<<"/sdcard";
-
     m_btnreturn = new QPushButton(this);
     m_btnreturn->setStyleSheet(tr("border-image: url(:/image/return.png);"));
     QPixmap pixmap(":/image/return.png");
@@ -88,24 +85,27 @@ void QfmWidget::initLayout()
     m_titleLabel->setFont(font);
     m_titleLabel->setAlignment(Qt::AlignCenter);
 
-    hlayout->addWidget(m_btnreturn, 1);
-    hlayout->addWidget(m_titleLabel, 1);
-    hlayout->addStretch(1);
-    hlayout->setMargin(0);
-    hlayout->setSpacing(0);
+    m_btnopen = new QPushButton(this);
+    m_btnopen->setText(tr("open"));
+    m_btnopen->hide();
 
     m_listWid = new QListWidget(this);
     m_listWid->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     m_listWid->setStyleSheet("background-color:rgb(204,228,247)");
-    setStyleSheet("background-color:rgb(204,228,247)");
     getlist(m_listWid, &m_topDirList);
     m_listWid->setObjectName(tr("filelist"));
-    mainLayout->addLayout(hlayout);
-    mainLayout->addWidget(m_listWid);
-    setLayout(mainLayout);
+
+    m_toolbar = new QToolBar(this);
+    m_toolbar->addWidget(m_btnreturn);
+    m_toolbar->addWidget(m_titleLabel);
+    m_toolbar->addWidget(m_btnopen);
+
+    setCentralWidget(m_listWid);
+    addToolBar(m_toolbar);
+    setStyleSheet("background-color:rgb(204,228,247)");
 }
 
-void QfmWidget::getlist(QListWidget *listWid, QStringList *list)
+void QfmWindow::getlist(QListWidget *listWid, QStringList *list)
 {
     listWid->clear();
 
@@ -114,6 +114,10 @@ void QfmWidget::getlist(QListWidget *listWid, QStringList *list)
         QListWidgetItem *item = new QListWidgetItem();
         item->setText(list->at(i));
         item->setTextColor(QColor(Qt::black));
+        if(m_curDir.compare("top")){
+            item->setFlags(item->flags() | Qt::ItemIsUserCheckable);
+            item->setCheckState(Qt::Unchecked);
+        }
         listWid->addItem(item);
     }
 
@@ -124,7 +128,7 @@ void QfmWidget::getlist(QListWidget *listWid, QStringList *list)
     }
 }
 
-void QfmWidget::getItems(QListWidgetItem *item)
+void QfmWindow::getItems(QListWidgetItem *item)
 {
     QString path;
     QStringList files;
@@ -158,7 +162,7 @@ void QfmWidget::getItems(QListWidgetItem *item)
     }
 }
 
-bool QfmWidget::isTop(QString path)
+bool QfmWindow::isTop(QString path)
 {
 
     for(int i = 0; i < m_topPathList.count(); i++){
@@ -169,7 +173,19 @@ bool QfmWidget::isTop(QString path)
     return false;
 }
 
-void QfmWidget::on_returnClicked()
+int QfmWindow::getCheckedItemCnt(void)
+{
+    int cnt = 0;
+    for(int i=0; i < m_listWid->count(); i++){
+        QListWidgetItem * ii = m_listWid->item(i);
+        if(ii->checkState() == Qt::Checked){
+            cnt++;
+        }
+    }
+    return cnt;
+}
+
+void QfmWindow::on_returnClicked()
 {
     if(m_curDir.compare("top")){
         if(isTop(m_curDir)){
@@ -193,13 +209,21 @@ void QfmWidget::on_returnClicked()
 
 }
 
-void QfmWidget::on_itemEntered(QListWidgetItem *item)
+void QfmWindow::on_itemEntered(QListWidgetItem *item)
 {
 //    getItems(item);
 }
 
-void QfmWidget::on_itemClicked(QListWidgetItem *item)
+
+
+void QfmWindow::on_itemClicked(QListWidgetItem *item)
 {
+    if(item->checkState() == Qt::Checked){
+        m_btnopen->show();
+    }else{
+        m_btnopen->hide();
+    }
+
     if(m_curDir.compare("top")){
         QString path = m_curDir + "/" + item->text();
         QFileInfo file = QFileInfo(path);

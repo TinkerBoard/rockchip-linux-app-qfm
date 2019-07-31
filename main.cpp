@@ -47,7 +47,7 @@
 ** $QT_END_LICENSE$
 **
 ****************************************************************************/
-#include "qfmwidget.h"
+#include "qfmwindow.h"
 #include <QApplication>
 #include <QTranslator>
 
@@ -59,7 +59,7 @@ int main(int argc, char *argv[])
     appFont.setPixelSize(32);
     app.setFont(appFont);
 
-    QfmWidget w;
+    QfmWindow w;
     w.showFullScreen();
 
     return app.exec();
