@@ -244,3 +244,44 @@ void MimeUtils::openInApp(QString exe, const QFileInfo &file,
   QProcess::startDetached(cmd);
 }
 
+void MimeUtils::openFiles(const QStringList &files) {
+  qDebug() << "openInApp without app";
+
+  QString mime = getMimeType(files[0]);
+  load(defaultsFileName, "Default Applications");
+  QString app = value(mime).toString().split(";").first();
+  QString desktop = findApplication(qApp->applicationFilePath(), app);
+  QString file;
+  for(int i = 0; i < files.size(); i++){
+      file.append(files[i]).append(" ");
+  }
+  qDebug() << "openInApp" << file << mime << app << desktop;
+  if (!desktop.isEmpty()) {
+    getDesktopFile(desktop);
+//    openInApp(exec, file, termCmd);
+    qDebug() << "openInApp" << exec << file;
+    // Separate application name from its arguments
+    QStringList split = exec.split(" ");
+    QString name = split.takeAt(0);
+    QString args = split.join(" ");
+
+    if (args.toLower().contains("%f")) {
+      args.replace("%f", file, Qt::CaseInsensitive);
+    } else if (args.toLower().contains("%u")) {
+      args.replace("%u", file, Qt::CaseInsensitive);
+    } else {
+      args.append(args.isEmpty() ? "" : " ");
+      args.append(file);
+    }
+    qDebug() << "qprocess start detached" << name << args;
+    QString cmd = name;
+    cmd.append(" ");
+    cmd.append(args);
+    qDebug() << "running:" << cmd;
+    QProcess::startDetached(cmd);
+  } else {
+     QString title = tr("No default application");
+     QString msg = tr("No default application for mime: %1!").arg(mime);
+     QMessageBox::warning(Q_NULLPTR, title, msg);
+  }
+}

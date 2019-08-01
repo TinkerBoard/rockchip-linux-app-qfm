@@ -67,6 +67,7 @@ QfmWindow::QfmWindow(QWidget *parent) : QMainWindow(parent)
     m_topDirList<<"Root"<<"Home"<<"Oem"<<"User data"<<"sdcard";
     m_topPathList<<"/"<<QStandardPaths::standardLocations(QStandardPaths::HomeLocation)<<"/oem"<<"/userdata"<<"/sdcard";
     initLayout();
+    connect(m_btnopen, SIGNAL(clicked(bool)), this, SLOT(on_openClicked()));
     connect(m_btnreturn, SIGNAL(clicked(bool)), this, SLOT(on_returnClicked()));
     connect(m_listWid, SIGNAL(itemClicked(QListWidgetItem *)), this, SLOT(on_itemClicked(QListWidgetItem *)));
     connect(m_listWid, SIGNAL(itemEntered(QListWidgetItem *)), this, SLOT(on_itemEntered(QListWidgetItem *)));
@@ -87,12 +88,12 @@ void QfmWindow::initLayout()
 
     m_btnopen = new QPushButton(this);
     m_btnopen->setText(tr("open"));
-    m_btnopen->hide();
+    m_btnopen->setVisible(true);
 
     m_listWid = new QListWidget(this);
     m_listWid->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     m_listWid->setStyleSheet("background-color:rgb(204,228,247)");
-    getlist(m_listWid, &m_topDirList);
+    getlist(m_listWid, 0);
     m_listWid->setObjectName(tr("filelist"));
 
     m_toolbar = new QToolBar(this);
@@ -107,22 +108,8 @@ void QfmWindow::initLayout()
     setWindowFlags(Qt::FramelessWindowHint);
 }
 
-void QfmWindow::getlist(QListWidget *listWid, QStringList *list)
+void QfmWindow::updatelabel(void)
 {
-    listWid->clear();
-
-    for(int i = 0; i < list->size(); ++i)
-    {
-        QListWidgetItem *item = new QListWidgetItem();
-        item->setText(list->at(i));
-        item->setTextColor(QColor(Qt::black));
-        if(m_curDir.compare("top")){
-            item->setFlags(item->flags() | Qt::ItemIsUserCheckable);
-            item->setCheckState(Qt::Unchecked);
-        }
-        listWid->addItem(item);
-    }
-
     if(m_curDir.compare("top")){
         m_titleLabel->setText(m_curDir);
      }else {
@@ -130,43 +117,129 @@ void QfmWindow::getlist(QListWidget *listWid, QStringList *list)
     }
 }
 
-void QfmWindow::getItems(QListWidgetItem *item)
+void QfmWindow::updatecurdir(QString path, bool back)
 {
-    QString path;
-    QStringList files;
-
-    if(m_curDir.compare("top")){
-        path = item->text();
-        if(m_curDir.compare("/")){
-            files = m_fileUpdater.getFiles(m_curDir + '/' + path);
-        }else{
-            files = m_fileUpdater.getFiles('/' + path);
+    if(istop(m_curDir)){
+        for(int i = 0; i < m_topDirList.count(); i++){
+            if(!m_topDirList.at(i).compare(path)){
+                m_curDir = m_topPathList.at(i);
+            }
         }
-
+    }else if(inTopList(m_curDir)){
+        if(back){
+             m_curDir = "top";
+             return;
+        }
+        if(m_curDir.compare("/")){
+            m_curDir = m_curDir + '/' + path;
+        }else {
+            m_curDir = '/' + path;
+        }
     }else {
-        path = m_topPathList.at(m_listWid->row(item));
-        files = m_fileUpdater.getFiles(path);
-    }
+        if(back){
+            int index = m_curDir.lastIndexOf('/');
 
-    if(files.empty()){
-        ;
-    }else{
-        if(m_curDir.compare("top")){
+            if(index == 0){
+                m_curDir = "/";
+            }else {
+                m_curDir = m_curDir.mid(0, index);
+            }
+        }else {
             if(m_curDir.compare("/")){
                 m_curDir = m_curDir + '/' + path;
             }else {
                 m_curDir = '/' + path;
             }
-        }else {
-            m_curDir = path;
         }
-        getlist(m_listWid, &files);
     }
 }
 
-bool QfmWindow::isTop(QString path)
+QListWidgetItem* QfmWindow::getitem(QString name)
 {
+    QListWidgetItem *item = new QListWidgetItem();
+    item->setText(name);
+    item->setTextAlignment(Qt::AlignJustify);
+    item->setTextColor(QColor(Qt::black));
+    item->setFlags(item->flags() | Qt::ItemIsUserCheckable);
+    item->setCheckState(Qt::Unchecked);
+    return item;
+}
 
+void QfmWindow::getlist(QListWidget *listWid, QListWidgetItem *item)
+{
+    QFileInfoList files;
+    bool intop = istop(m_curDir);
+    int row = listWid->row(item);
+    QString path;// = item->text();
+
+    if(item){
+        path = item->text();
+    }
+
+    listWid->clear();
+    if(intop){
+        if(item){
+            path = m_topPathList.at(row);
+            files = m_fileUpdater.getFiles(path);
+            if(files.empty()){
+                return;
+            }
+
+            for(int i = 0; i < files.count(); ++i){
+                listWid->addItem(getitem(files[i].fileName()));
+            }
+        }else{
+            for(int i = 0; i < m_topDirList.size(); ++i){
+                listWid->addItem(getitem(m_topDirList.at(i)));
+            }
+        }
+
+    }else {
+        if(inTopList(m_curDir)){
+            if(m_curDir.compare("/")){
+                files = m_fileUpdater.getFiles(m_curDir + '/' + path);
+            }else{
+                files = m_fileUpdater.getFiles('/' + path);
+            }
+
+            if(files.empty()){
+                return;
+            }
+
+            for(int i = 0; i < files.count(); ++i){
+                listWid->addItem(getitem(files[i].fileName()));
+            }
+        }else {
+            if(m_curDir.compare("/")){
+                files = m_fileUpdater.getFiles(m_curDir + '/' + path);
+            }else{
+                files = m_fileUpdater.getFiles('/' + path);
+            }
+
+            if(files.empty()){
+                return;
+            }
+
+            for(int i = 0; i < files.count(); ++i){
+                listWid->addItem(getitem(files[i].fileName()));
+            }
+        }
+
+    }
+
+}
+
+bool QfmWindow::istop(QString path)
+{
+    if(! path.compare("top")){
+        return true;
+    }
+
+    return false;
+}
+
+bool QfmWindow::inTopList(QString path)
+{
     for(int i = 0; i < m_topPathList.count(); i++){
         if(!m_topPathList.at(i).compare(path)){
             return true;
@@ -187,28 +260,38 @@ int QfmWindow::getCheckedItemCnt(void)
     return cnt;
 }
 
+void QfmWindow::on_openClicked()
+{
+    QStringList files;
+    bool gogogo = false;
+
+    if(! istop(m_curDir)){
+        for(int i=0; i < m_listWid->count(); i++){
+            QListWidgetItem * item = m_listWid->item(i);
+            if(item->checkState() == Qt::Checked){
+                QString path = m_curDir + "/" + item->text();
+                QFileInfo file(path);
+                if(file.exists()){
+                    gogogo = true;
+                    files.append(file.absoluteFilePath());
+                }
+            }
+        }
+    }
+    if(gogogo){
+        m_mimeUtils.openFiles(files);
+    }
+}
+
 void QfmWindow::on_returnClicked()
 {
-    if(m_curDir.compare("top")){
-        if(isTop(m_curDir)){
-            m_curDir = "top";
-            getlist(m_listWid, &m_topDirList);
-        }else {
-            QStringList files;
-            int index = m_curDir.lastIndexOf('/');
-
-            if(index == 0){
-                m_curDir = "/";
-            }else {
-                m_curDir = m_curDir.mid(0, index);
-            }
-            files = m_fileUpdater.getFiles(m_curDir);
-            getlist(m_listWid, &files);
-        }
-    }else {
+    if(istop(m_curDir)){
         qApp->exit(0);
+    }else{
+        updatecurdir(0, true);
+        getlist(m_listWid, 0);
+        updatelabel();
     }
-
 }
 
 void QfmWindow::on_itemEntered(QListWidgetItem *item)
@@ -216,25 +299,26 @@ void QfmWindow::on_itemEntered(QListWidgetItem *item)
 //    getItems(item);
 }
 
-
-
 void QfmWindow::on_itemClicked(QListWidgetItem *item)
 {
     if(item->checkState() == Qt::Checked){
         m_btnopen->show();
-    }else{
-        m_btnopen->hide();
     }
-
-    if(m_curDir.compare("top")){
+    int checkedcnt = getCheckedItemCnt();
+    if(checkedcnt >= 1){
+        return;
+    }
+    if(! istop(m_curDir)){
         QString path = m_curDir + "/" + item->text();
-        QFileInfo file = QFileInfo(path);
-        if(! file.isDir()){
+        QDir dir(path);
+        if(! dir.exists()){
             m_mimeUtils.openInApp(path, "");
             return;
         }
     }
-    getItems(item);
+    QString path = item->text();
+    getlist(m_listWid, item);
+    updatecurdir(path, false);
+    updatelabel();
 }
-
 

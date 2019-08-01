@@ -73,11 +73,11 @@ void FileUpdater::waitForThreadFinished()
     wait();
 }
 
-QStringList FileUpdater::getFiles(const QString &path)
+QFileInfoList FileUpdater::getFiles(const QString &path)
 {
     QDir *dir = new QDir(path);
     QFileInfoList files;
-    QStringList filelist;
+
     switch (m_Filter) {
     case FileAll:
         files = dir->entryInfoList(QDir::AllDirs|QDir::Files|QDir::NoDotAndDotDot);
@@ -93,14 +93,11 @@ QStringList FileUpdater::getFiles(const QString &path)
         break;
     }
 
-
     for(int i=0;i<files.count();i++){
-        filelist << files[i].fileName();
-        QString type = getMimeType(files[i].fileName());
-        qDebug() << files[i].fileName() << "mime type: " << type;
+        qDebug() << files[i].fileName() << "mime type: " << getMimeType(files[i].fileName()) << "dir: " << files[i].isDir();
     }
 
-    return filelist;
+    return files;
 }
 
 QString FileUpdater::getMimeType(const QString &path)

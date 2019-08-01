@@ -65,7 +65,7 @@ class FileUpdater : public QThread
 public:
     FileUpdater();
     ~FileUpdater(){}
-    QStringList getFiles(const QString &path);
+    QFileInfoList getFiles(const QString &path);
     QString getMimeType(const QString &path);
     void waitForThreadFinished();
 

@@ -80,11 +80,15 @@ private:
     QToolBar *m_toolbar;
     bool m_multichecking;
     void initLayout();
-    void getlist(QListWidget *listWid, QStringList *list);
-    void getItems(QListWidgetItem *item);
-    bool isTop(QString path);
+    void updatelabel();
+    void updatecurdir(QString path, bool back);
+    QListWidgetItem* getitem(QString name);
+    void getlist(QListWidget *listWid, QListWidgetItem *curitem);
+    bool istop(QString path);
+    bool inTopList(QString path);
     int getCheckedItemCnt(void);
 private slots:
+    void on_openClicked();
     void on_returnClicked();
     void on_itemEntered(QListWidgetItem *item);
     void on_itemClicked(QListWidgetItem *item);
