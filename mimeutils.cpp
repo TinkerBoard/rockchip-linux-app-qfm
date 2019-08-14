@@ -8,16 +8,26 @@
 #include <QMimeDatabase>
 #include <QMimeType>
 
-#define MIME_APPS "/usr/share/applications/mimeapps.list"
+#define MIME_APPS1 "/.local/share/applications/mimeapps.list"
+#define MIME_APPS2 "/usr/share/applications/mimeapps.list"
 /**
  * @brief Creates mime utils
  * @param parent
  */
 MimeUtils::MimeUtils(QObject *parent) : QObject(parent) {
-  defaultsFileName = MIME_APPS;
-  getProperties();
-  load(defaultsFileName, "Default Applications");
-  defaultsChanged = false;
+    QString path(QDir::homePath() + MIME_APPS1);
+    QFileInfo fi(path);
+    if(fi.exists()){
+        defaultsFileName = path;
+    } else {
+        QFileInfo ff(MIME_APPS2);
+        if(ff.exists())
+            defaultsFileName = MIME_APPS2;
+    }
+
+    getProperties();
+    load(defaultsFileName, "Default Applications");
+    defaultsChanged = false;
 }
 
 MimeUtils::~MimeUtils() {
