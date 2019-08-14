@@ -90,7 +90,6 @@ private:
 private slots:
     void on_openClicked();
     void on_returnClicked();
-    void on_itemEntered(QListWidgetItem *item);
     void on_itemClicked(QListWidgetItem *item);
 };
 

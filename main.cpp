@@ -61,10 +61,6 @@ int main(int argc, char *argv[])
     app.setFont(appFont);
 
     QfmWindow w;
-
-    const QRect availableGeometry = QApplication::desktop()->availableGeometry(&w);
-    w.resize(availableGeometry.width(), availableGeometry.height());
-    w.showFullScreen();
     w.show();
     return app.exec();
 }

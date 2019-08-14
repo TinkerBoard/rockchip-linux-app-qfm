@@ -53,6 +53,7 @@
 #include <QColor>
 #include <QCheckBox>
 #include <QDebug>
+#include <QDesktopWidget>
 #include <QDir>
 #include <QDirIterator>
 #include <QStandardPaths>
@@ -70,11 +71,13 @@ QfmWindow::QfmWindow(QWidget *parent) : QMainWindow(parent)
     connect(m_btnopen, SIGNAL(clicked(bool)), this, SLOT(on_openClicked()));
     connect(m_btnreturn, SIGNAL(clicked(bool)), this, SLOT(on_returnClicked()));
     connect(m_listWid, SIGNAL(itemClicked(QListWidgetItem *)), this, SLOT(on_itemClicked(QListWidgetItem *)));
-    connect(m_listWid, SIGNAL(itemEntered(QListWidgetItem *)), this, SLOT(on_itemEntered(QListWidgetItem *)));
 }
 
 void QfmWindow::initLayout()
 {
+    const QRect availableGeometry = QApplication::desktop()->availableGeometry(this);
+    resize(availableGeometry.width(), availableGeometry.height());
+
     m_btnreturn = new QPushButton(this);
     m_btnreturn->setStyleSheet(tr("border-image: url(:/image/return.png);"));
     QPixmap pixmap(":/image/return.png");
@@ -93,7 +96,7 @@ void QfmWindow::initLayout()
     m_listWid = new QListWidget(this);
     m_listWid->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     m_listWid->setStyleSheet("background-color:rgb(204,228,247)");
-    getlist(m_listWid, 0);
+    getlist(m_listWid, nullptr);
     m_listWid->setObjectName(tr("filelist"));
 
     m_toolbar = new QToolBar(this);
@@ -288,15 +291,10 @@ void QfmWindow::on_returnClicked()
     if(istop(m_curDir)){
         qApp->exit(0);
     }else{
-        updatecurdir(0, true);
-        getlist(m_listWid, 0);
+        updatecurdir(nullptr, true);
+        getlist(m_listWid, nullptr);
         updatelabel();
     }
-}
-
-void QfmWindow::on_itemEntered(QListWidgetItem *item)
-{
-//    getItems(item);
 }
 
 void QfmWindow::on_itemClicked(QListWidgetItem *item)
