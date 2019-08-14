@@ -4,8 +4,7 @@
 #
 #-------------------------------------------------
 
-QT  += quickwidgets
-greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
+QT  += quickwidgets widgets
 
 TARGET = qfm
 TEMPLATE = app
@@ -13,12 +12,10 @@ TEMPLATE = app
 INCLUDEPATH +=$$PWD main
 
 HEADERS += \
-    $$PWD/fileupdater.h \
     $$PWD/mimeutils.h \
     $$PWD/qfmwindow.h \
 
 SOURCES += \
-    $$PWD/fileupdater.cpp \
     $$PWD/main.cpp \
     $$PWD/mimeutils.cpp \
     $$PWD/qfmwindow.cpp

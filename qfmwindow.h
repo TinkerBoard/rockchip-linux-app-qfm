@@ -56,8 +56,15 @@
 #include <QMainWindow>
 #include <QPushButton>
 #include <QThread>
-#include "fileupdater.h"
 #include "mimeutils.h"
+
+enum FileFilter
+{
+    FileAll,
+    FileVideo,
+    FileMusic,
+    FilePic
+};
 
 class QfmWindow : public QMainWindow
 {
@@ -67,6 +74,10 @@ public:
     ~QfmWindow(){}
 
 private:
+    enum FileFilter m_Filter;
+    QStringList m_videoSuffixList;
+    QStringList m_musicSuffixList;
+    QStringList m_picSuffixList;
     bool mediaHasUpdate;
     QPushButton *m_btnreturn;
     QLabel *m_titleLabel;
@@ -75,11 +86,11 @@ private:
     QStringList m_topDirList;
     QStringList m_topPathList;
     QString m_curDir;
-    FileUpdater m_fileUpdater;
     MimeUtils m_mimeUtils;
     QToolBar *m_toolbar;
     bool m_multichecking;
     void initLayout();
+    QFileInfoList getFiles(const QString &path);
     void updatelabel();
     void updatecurdir(QString path, bool back);
     QListWidgetItem* getitem(QString name);

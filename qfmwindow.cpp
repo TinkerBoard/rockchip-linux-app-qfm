@@ -56,6 +56,7 @@
 #include <QDesktopWidget>
 #include <QDir>
 #include <QDirIterator>
+#include <QMimeDatabase>
 #include <QStandardPaths>
 #include <QToolBar>
 
@@ -67,6 +68,10 @@ QfmWindow::QfmWindow(QWidget *parent) : QMainWindow(parent)
     m_multichecking = false;
     m_topDirList<<"Root"<<"Home"<<"Oem"<<"User data"<<"sdcard";
     m_topPathList<<"/"<<QStandardPaths::standardLocations(QStandardPaths::HomeLocation)<<"/oem"<<"/userdata"<<"/sdcard";
+    m_videoSuffixList<<"*.mp4"<<"*.m4v"<<"*.avi"<<"*.wmv"<<"*.mkv"<<"*.asf"<<"*.mov"<<"*.ts"<<"*.mpg"<<"*.mpeg"<<"*.vob"<<"*.m2ts"<<"*.trp"<<"*.flv"<<"*.webm"<<"*.3gp"<<"*.flv";
+    m_musicSuffixList<<"*.mp3"<<"*.wave"<<"*.wma"<<"*.ogg"<<"*.midi"<<"*.mod"<<"*.mp1"<<"*.mp2"<<"*.wav"<<"*.flac"<<"*.aac"<<"*.m4a"<<"*.aac";
+    m_picSuffixList<<"*.jpg"<<"*.png"<<"*.bmp"<<"*.jpeg"<<"*.svg"<<"*.titf"<<"*.gif";
+    m_Filter = FileAll;
     initLayout();
     connect(m_btnopen, SIGNAL(clicked(bool)), this, SLOT(on_openClicked()));
     connect(m_btnreturn, SIGNAL(clicked(bool)), this, SLOT(on_returnClicked()));
@@ -109,6 +114,35 @@ void QfmWindow::initLayout()
     setStyleSheet("background-color:rgb(204,228,247)");
     setWindowState(Qt::WindowMaximized);
     setWindowFlags(Qt::FramelessWindowHint);
+}
+
+QFileInfoList QfmWindow::getFiles(const QString &path)
+{
+    QDir *dir = new QDir(path);
+    QFileInfoList files;
+
+    switch (m_Filter) {
+    case FileAll:
+        files = dir->entryInfoList(QDir::AllDirs|QDir::Files|QDir::NoDotAndDotDot);
+        break;
+    case FileVideo:
+        files = dir->entryInfoList(m_videoSuffixList, QDir::AllDirs|QDir::Files|QDir::NoDotAndDotDot);
+        break;
+    case FileMusic:
+        files = dir->entryInfoList(m_musicSuffixList, QDir::AllDirs|QDir::Files|QDir::NoDotAndDotDot);
+        break;
+    case FilePic:
+        files = dir->entryInfoList(m_picSuffixList, QDir::AllDirs|QDir::Files|QDir::NoDotAndDotDot);
+        break;
+    }
+
+    for(int i=0;i<files.count();i++){
+        QMimeDatabase db;
+        QMimeType type = db.mimeTypeForFile(files[i].fileName());
+        qDebug() << files[i].fileName() << "mime type: " << type.name() << "dir: " << files[i].isDir();
+    }
+
+    return files;
 }
 
 void QfmWindow::updatelabel(void)
@@ -183,7 +217,7 @@ void QfmWindow::getlist(QListWidget *listWid, QListWidgetItem *item)
     if(intop){
         if(item){
             path = m_topPathList.at(row);
-            files = m_fileUpdater.getFiles(path);
+            files = getFiles(path);
             if(files.empty()){
                 return;
             }
@@ -200,9 +234,9 @@ void QfmWindow::getlist(QListWidget *listWid, QListWidgetItem *item)
     }else {
         if(inTopList(m_curDir)){
             if(m_curDir.compare("/")){
-                files = m_fileUpdater.getFiles(m_curDir + '/' + path);
+                files = getFiles(m_curDir + '/' + path);
             }else{
-                files = m_fileUpdater.getFiles('/' + path);
+                files = getFiles('/' + path);
             }
 
             if(files.empty()){
@@ -214,9 +248,9 @@ void QfmWindow::getlist(QListWidget *listWid, QListWidgetItem *item)
             }
         }else {
             if(m_curDir.compare("/")){
-                files = m_fileUpdater.getFiles(m_curDir + '/' + path);
+                files = getFiles(m_curDir + '/' + path);
             }else{
-                files = m_fileUpdater.getFiles('/' + path);
+                files = getFiles('/' + path);
             }
 
             if(files.empty()){
