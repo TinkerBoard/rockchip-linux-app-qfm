@@ -66,8 +66,8 @@ QfmWindow::QfmWindow(QWidget *parent) : QMainWindow(parent)
 {
     m_curDir= "top";
     m_multichecking = false;
-    m_topDirList<<"Root"<<"Home"<<"Oem"<<"User data"<<"sdcard";
-    m_topPathList<<"/"<<QStandardPaths::standardLocations(QStandardPaths::HomeLocation)<<"/oem"<<"/userdata"<<"/sdcard";
+    m_topDirList<<"Root"<<"Home"<<"Oem"<<"User Data"<<"SD Card"<<"USB Disk";
+    m_topPathList<<"/"<<QStandardPaths::standardLocations(QStandardPaths::HomeLocation)<<"/oem"<<"/userdata"<<"/sdcard"<<"udisk";
     m_videoSuffixList<<"*.mp4"<<"*.m4v"<<"*.avi"<<"*.wmv"<<"*.mkv"<<"*.asf"<<"*.mov"<<"*.ts"<<"*.mpg"<<"*.mpeg"<<"*.vob"<<"*.m2ts"<<"*.trp"<<"*.flv"<<"*.webm"<<"*.3gp"<<"*.flv";
     m_musicSuffixList<<"*.mp3"<<"*.wave"<<"*.wma"<<"*.ogg"<<"*.midi"<<"*.mod"<<"*.mp1"<<"*.mp2"<<"*.wav"<<"*.flac"<<"*.aac"<<"*.m4a"<<"*.aac";
     m_picSuffixList<<"*.jpg"<<"*.png"<<"*.bmp"<<"*.jpeg"<<"*.svg"<<"*.titf"<<"*.gif";
