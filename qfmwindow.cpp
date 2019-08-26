@@ -93,6 +93,7 @@ void QfmWindow::initLayout()
     font.setBold(true);
     m_titleLabel->setFont(font);
     m_titleLabel->setAlignment(Qt::AlignCenter);
+    m_titleLabel->setStyleSheet("background-color:rgba(255, 255, 255, 0)");
 
     m_btnopen = new QPushButton(this);
     m_btnopen->setText(tr("open"));
@@ -106,8 +107,9 @@ void QfmWindow::initLayout()
 
     m_toolbar = new QToolBar(this);
     m_toolbar->addWidget(m_btnreturn);
-    m_toolbar->addWidget(m_titleLabel);
     m_toolbar->addWidget(m_btnopen);
+    m_toolbar->addWidget(m_titleLabel);
+
 
     setCentralWidget(m_listWid);
     addToolBar(m_toolbar);
