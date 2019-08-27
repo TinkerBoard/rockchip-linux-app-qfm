@@ -168,6 +168,26 @@ QString MimeUtils::findApplication(QString appPath, QString desktopFile)
     return result;
 }
 
+void MimeUtils::checkAndKillRunningApp(QString &appName)
+{
+    QProcess p;
+    QString s;
+
+    s = "ps -aux";
+    p.start(s);
+    p.waitForStarted();
+    p.waitForFinished();
+    QByteArray b = p.readAll();
+    QString out = QString::fromLocal8Bit(b);
+    if(out.contains(appName)){
+        QString str = appName.mid(appName.lastIndexOf('/') + 1, s.size());
+        s = "killall " + str;
+        qDebug() << "killing existing app: " + str;
+        p.start(s);
+        p.waitForFinished();
+    }
+}
+
 /**
  * @brief Opens file in a default application
  * @param file
@@ -236,7 +256,7 @@ void MimeUtils::openInApp(QString exe, const QFileInfo &file,
   }
 
   qDebug() << "qprocess start detached" << name << args;
-
+  checkAndKillRunningApp(name);
   // Start application
  /* QProcess *myProcess = new QProcess(processOwner);
   myProcess->startDetached(name, QStringList() << args);
@@ -284,6 +304,7 @@ void MimeUtils::openFiles(const QStringList &files) {
       args.append(file);
     }
     qDebug() << "qprocess start detached" << name << args;
+    checkAndKillRunningApp(name);
     QString cmd = name;
     cmd.append(" ");
     cmd.append(args);

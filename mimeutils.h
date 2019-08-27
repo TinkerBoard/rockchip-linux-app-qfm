@@ -21,6 +21,7 @@ public:
   void getDesktopFile(const QString &fileName);
   QStringList applicationLocations(QString appPath);
   QString findApplication(QString appPath, QString desktopFile);
+  void checkAndKillRunningApp(QString &appName);
   void openInApp(QString exe, const QFileInfo &file, QString termCmd = QString());
   void openInApp(const QFileInfo &file, QString termCmd = QString());
   void openFiles(const QStringList &files);
