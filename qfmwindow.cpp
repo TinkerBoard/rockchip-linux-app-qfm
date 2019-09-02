@@ -67,7 +67,7 @@ QfmWindow::QfmWindow(QWidget *parent) : QMainWindow(parent)
     m_curDir= "top";
     m_multichecking = false;
     m_topDirList<<"Root"<<"Home"<<"Oem"<<"User Data"<<"SD Card"<<"USB Disk";
-    m_topPathList<<"/"<<QStandardPaths::standardLocations(QStandardPaths::HomeLocation)<<"/oem"<<"/userdata"<<"/sdcard"<<"udisk";
+    m_topPathList<<"/"<<QStandardPaths::standardLocations(QStandardPaths::HomeLocation)<<"/oem"<<"/userdata"<<"/sdcard"<<"/udisk";
     m_videoSuffixList<<"*.mp4"<<"*.m4v"<<"*.avi"<<"*.wmv"<<"*.mkv"<<"*.asf"<<"*.mov"<<"*.ts"<<"*.mpg"<<"*.mpeg"<<"*.vob"<<"*.m2ts"<<"*.webm";
     m_musicSuffixList<<"*.mp3"<<"*.wave"<<"*.wma"<<"*.ogg"<<"*.mp1"<<"*.mp2"<<"*.wav"<<"*.aac"<<"*.m4a";
     m_picSuffixList<<"*.jpg"<<"*.png"<<"*.bmp"<<"*.jpeg";
